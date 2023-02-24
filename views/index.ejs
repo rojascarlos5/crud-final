@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>CRUD</title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-gH2yIJqKdNHPEq0n4Mqa/HGKIhSkIHeL5AyhkYV8i59U5AR6csBvApHHNl/vI1Bx" crossorigin="anonymous">
+    <script src="https://kit.fontawesome.com/43ebf4cfc4.js" crossorigin="anonymous"></script>
+  </head>
+  <body>
+
+    <div class="container mt-4 shadow-lg p-3 mb-5 bg-body rounded">
+    <h1 class="container p-2 text-primary">Crear un usuario</h1>
+    <form id="formulario">
+          <div class="mb-3">
+            <label for="name" class="form-label">Nombre:</label>
+            <input type="text" class="form-control" name="name" id="name" autofocus required pattern="[A-Za-z]+">
+            <div class="valid-feedback">
+              ¡Se ve bien!
+          </div>
+          </div>
+          <div class="mb-3">
+            <label for="lastname" class="form-label">Apellido:</label>
+            <input type="text" class="form-control" name="lastname" id="lastname" autofocus required pattern="[A-Za-z]+">
+          </div>
+          <div class="mb-3">
+            <label for="age" class="form-label">Edad:</label>
+            <input type="text" class="form-control" name="age" id="age" required pattern="[0-9]{2}">
+          </div>
+          <div class="mb-3">
+            <label for="email" class="form-label">Correo:</label>
+            <input type="email" class="form-control" name="email" id="email" autofocus required pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2, 4}$">
+          </div>
+          <div class="mb-3">
+          <input type="submit" class="btn btn-primary" id="btnSave" value="Guardar" disabled>
+          </div>
+
+        </div>
+    </form>
+</div>
+
+    <div class="container mt-4 shadow-lg p-3 mb-5 bg-body rounded">        
+        
+
+        <table id="employeeList" class="table mt-2 table-dark table-striped">
+            <thead>
+
+                <tr class="text-center table-group-divider">
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>Edad</th>
+                    <th>Correo</th>
+                    <th>Acciones</th>
+                </tr>
+
+            </thead>
+            <tbody id="tbodyResultados" class="text-center">                
+            </tbody>
+        </table>
+
+
+    <script>
+      //JAVASCRIPT
+
+// ----BOOTSTRAP ----
+
+  
+// ------ CRUD ------
+
+//Cuando carga la página
+window.onload=function(){
+  lista();
+  document.getElementById('formulario').addEventListener('submit', agregarOEditar);
+  document.getElementById('formulario').addEventListener('submit', lista);
+}
+
+//Variable global
+var idEditar = null;
+
+//Evento de botón Registrar/Guardar (verificación)
+function agregarOEditar(e){
+  
+  var data = {
+    name : document.getElementById('name').value,
+    lastname: document.getElementById('lastname').value,
+    age: document.getElementById('age').value,
+    email: document.getElementById('email').value
+  }
+
+  if(idEditar == null)  
+    agregar(data);
+  else if(idEditar > 0)
+    editar(data);
+  else
+    alert("Acción desconocida");  
+  
+  //Bloquea la acción de actualización del navegador:
+  e.preventDefault();
+}
+
+function agregar(data){ 
+  var usuarios = [];  
+  var idValido = 1; 
+  //si ya está en localStorage, lo agrego al array
+
+  
+
+  if(localStorage.getItem('value') !== null ){
+    usuarios = JSON.parse(localStorage.getItem('value')); //captura el array de objetos(JSON);
+        
+    if(usuarios.length > 0)
+      idValido =  (function obtenerIdValido() { //Función de ejecución automática
+               //Verifica si hay un "agujero" entre los números
+              for(var i = 0; i < usuarios.length; i++)
+                if(usuarios[i].Id != i+1)
+                  return i + 1;             
+              //si no se encuentra, devuelve el id posterior del último usuario
+              return usuarios[usuarios.length - 1].Id + 1;
+            })();
+  } 
+
+  var usuario = {
+    Id: idValido,
+    Nombre: data.name,
+    Apellido: data.lastname,
+    Edad: data.age,
+    Correo: data.email
+  };
+  
+  //Agrega el objeto al último índice de la matriz
+  usuarios.push(usuario); 
+  //Ordena el array por ID del objeto
+  usuarios.sort(function(a,b) {
+    return a.Id - b.Id;
+  });     
+  //Almacena en el localStorage
+  localStorage.setItem('value', JSON.stringify(usuarios));  
+  //Restablece los campos de formulario
+  document.getElementById('formulario').reset();  
+}
+
+function editar(data){
+  var btn = document.getElementById('btnSave'); 
+
+  usuarios = JSON.parse(localStorage.getItem('value'));
+  //Reemplaza la información
+  for(var i = 0; i < usuarios.length; i++){
+    if(usuarios[i].Id == idEditar){
+      usuarios[i].Nombre = data.name;
+      usuarios[i].Apellido = data.lastname;
+      usuarios[i].Edad = data.age;
+      usuarios[i].Correo = data.email;
+      
+      btn.value = "Guardar";
+      idEditar = null;
+
+      localStorage.setItem('value', JSON.stringify(usuarios));  
+      document.getElementById('formulario').reset();      
+      break;
+    }
+  }
+}
+
+//Función del botón editar
+function preparareditar(idRow){ 
+  document.getElementById('btnSave').value = "Editar";
+  
+  var name = document.getElementById('name'),
+      lastname = document.getElementById('lastname'),
+      age = document.getElementById('age'),
+      email = document.getElementById('email');
+
+  var usuarios = JSON.parse(localStorage.getItem('value'));
+  for(var i = 0; i < usuarios.length; i++){
+    if(usuarios[i].Id == idRow){      
+      //Poblar los campos
+      name.value = usuarios[i].Nombre;
+      lastname.value = usuarios[i].Apellido;
+      age.value = usuarios[i].Edad;
+      email.value = usuarios[i].Correo;
+      
+      //Recargar lista para borrar th con datos cambiados
+      lista();
+      //Puse ID nulo (si hace clic en varios botones de edición)
+      idEditar = null;
+      if(idEditar === null){
+        //cambiar los datos de la nueva línea
+        var th = document.getElementById("rowTable"+i);       
+        th.className = "estadoAlterado";        
+      }
+
+      //Asignar el id a la variable global
+      idEditar = usuarios[i].Id;
+      break;
+    }
+  }
+}
+
+function Eliminar(cod){
+  var usuarios = JSON.parse(localStorage.getItem('value'));
+
+  for(var i = 0; i < usuarios.length; i++)
+    if(usuarios[i].Id == cod)
+      usuarios.splice(i, 1);
+        
+  
+  localStorage.setItem('value', JSON.stringify(usuarios));
+  lista();
+  
+  //si no se tiene más registros, limpia el almacenamiento
+  if(usuarios.length == 0)
+    window.localStorage.removeItem("value");
+}
+
+function lista(){
+  //si no tiene ningún almacenamiento local, no haga nada
+  if(localStorage.getItem('value') === null)
+    return;
+  
+  //capturar los objetos de vuelta
+  var usuarios = JSON.parse(localStorage.getItem('value'));
+  var tbody = document.getElementById("tbodyResultados");
+
+  //limpiar el body cada vez que se actualiza
+  tbody.innerHTML = '';
+  
+  for(var i = 0; i < usuarios.length; i++){
+    var id = usuarios[i].Id,
+        name = usuarios[i].Nombre,
+        lastname = usuarios[i].Apellido,
+        age = usuarios[i].Edad,
+      email = usuarios[i].Correo
+             
+    tbody.innerHTML += '<tr id="rowTable'+i+'">'+
+                '<td>'+id+'</td>'+
+                '<td>'+name+'</td>'+
+                '<td>'+lastname+'</td>'+
+                '<td>'+age+'</td>'+
+                '<td>'+email+'</td>'+
+                '<td><button class="btn btn-danger" onclick="Eliminar(\'' + id + '\')"><i class="fa-solid fa-trash"></i> Eliminar</button> <button class="btn btn-primary" onclick="preparareditar(\'' + id + '\')"><i class="fa-solid fa-pen"></i> Editar</button>'+
+               '</tr>';   
+  }
+}
+
+//Funcion para habilitar el boton de envio
+document.getElementById('name').addEventListener('keyup', habilitarBtn)
+document.getElementById('lastname').addEventListener('keyup', habilitarBtn)
+document.getElementById('age').addEventListener('keyup', habilitarBtn)
+document.getElementById('email').addEventListener('keyup', habilitarBtn)
+
+function habilitarBtn(){
+nombre = document.getElementById('name').value;
+lastname = document.getElementById('lastname').value;
+age = document.getElementById('age').value;
+email = document.getElementById('email').value;
+val = 0;
+
+if(nombre == ''){
+  val++;
+}
+if(lastname == ''){
+  val++;
+}
+if(age == ''){
+  val++;
+}
+if(email == ''){
+  val++;
+}
+if(val == 0){
+  document.getElementById('btnSave').disabled = false
+}
+else{
+  document.getElementById('btnSave').disabled = true;
+}
+
+}
+    </script>
+  </body>
+</html>
